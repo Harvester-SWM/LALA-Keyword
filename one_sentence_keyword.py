@@ -145,7 +145,7 @@ def main():
         print(test_json)
         #test_json = {
         #    'comment_id' : 1234,
-        #    'comment' : "야이 개 자식아",
+        #    'comment' : "",
         #}
 
 
