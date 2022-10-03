@@ -1,5 +1,6 @@
 from kiwipiepy import Kiwi
 from kiwipiepy.utils import Stopwords
+import json
 '''
 NNG	일반 명사 -> 반드시 남겨둔다
 NNP	고유 명사 -> 반드시 남겨둔다
@@ -131,16 +132,29 @@ stopwords_dict = {
 
 def main():
     while True:
-        sentence = input('문장 입력 : ')
         # 만약에 json 으로 넣어주시면 문장을 json.load를 사용해서 dictionary로 바꾼 이후에 처리하시면 됩니다. 
-        one_sentence_keyword(sentence=sentence)
+        # json 구조
+        test_json = {
+            'comment_id' : 1234,
+            'comment' : "저는 김현우입니다.",
+        }
 
-def one_sentence_keyword(sentence=None):
-    if not sentence:
+        sentence = input('문장 입력 : ')
+        test_json['comment'] = sentence
+        one_sentence_keyword(test_json)
+        print(test_json)
+        #test_json = {
+        #    'comment_id' : 1234,
+        #    'comment' : "야이 개 자식아",
+        #}
+
+
+def one_sentence_keyword(test_json):
+    if not test_json['comment']:
         return 
 
     ret = []
-    for tok in kiwi.tokenize(sentence, stopwords=stopwords):
+    for tok in kiwi.tokenize(test_json['comment'], stopwords=stopwords):
         if remain_dic.get(tok.tag):
             # tag 는 품사 form 은 글자 그 자체 
             if tok.tag.startswith('VV') and len(tok.form) == 1:
@@ -150,8 +164,9 @@ def one_sentence_keyword(sentence=None):
             ret.append((tok.tag ,tok.form)) # tok.tag는 품사, tok.form 은 형태소 이다. 즉 (품사, 형태소)의 구조로 이루어진다.
         #print(tok.tag)
             # tok tag 나중에 추가
-    print(ret)
-    return ret
+    #print(ret)
+    test_json['keyword'] = ret
+    return test_json
 
 
 if __name__ == "__main__":
@@ -162,3 +177,4 @@ if __name__ == "__main__":
     for key, value in stopwords_dict.items():
         stopwords.add((key, value))
     main()
+    dict()
