@@ -30,8 +30,13 @@ def main():
     model = SentenceTransformer('snunlp/KR-SBERT-V40K-klueNLI-augSTS')
     now_comment = '잠온다 ㅠㅠ'
     comments = ['잠이 옵니다', '졸음이 옵니다', '기차가 옵니다', '잠온다 ㅠㅠ']
+    # 원래 문장도 clean 함수로 정리
     now_comment = clean(now_comment)
-    map(comments, clean)
     # 들어가기 전에 comments에 있는 문장을 모두 clean 함수로 정리
+    map(clean, comments)
+    
     save_file = sim_vec(model, now_comment, comments)
     print(save_file)
+
+if __name__ == "__main__":
+    main()
