@@ -2,6 +2,8 @@ from kiwipiepy import Kiwi
 from kiwipiepy.utils import Stopwords
 from clean import clean
 import json
+from kafka import KafkaConsumer, KafkaProducer
+from time import sleep
 '''
 NNG	일반 명사 -> 반드시 남겨둔다
 NNP	고유 명사 -> 반드시 남겨둔다
@@ -132,42 +134,57 @@ stopwords_dict = {
 
 
 def main():
-    while True:
-        # 만약에 json 으로 넣어주시면 문장을 json.load를 사용해서 dictionary로 바꾼 이후에 처리하시면 됩니다. 
-        # json 구조
-        test_json = {
-            'comment_id' : 1234,
-            'comment' : "저는 김현우입니다.",
-        }
-        
-        sentence = input('문장 입력 : ')
-        test_json['comment'] = sentence
-        one_sentence_keyword(test_json)
-        print(test_json)
-        #test_json = {
-        #    'comment_id' : 1234,
-        #    'comment' : "",
-        #}
-
-
-def one_sentence_keyword(test_json):
-    if not test_json['comment']:
-        return 
+    topic_name = "analyze-keywords"
+    consumer = KafkaConsumer(
+        topic_name,
+        bootstrap_servers=[
+            "localhost:9092",
+        ],
+        auto_offset_reset="latest",
+        enable_auto_commit=True,
+        group_id="keyword-group",
+        # value_deserializer=lambda x: loads(x.decode("utf-8")),
+        consumer_timeout_ms=1000,
+    )
+    producer = KafkaProducer(
+        acks=0,
+        bootstrap_servers=[
+            'localhost:9092'
+        ],
+    )
+    print("start")
     
-    ret = set()
-    print(clean(test_json['comment']))
-    for tok in kiwi.tokenize(clean(test_json['comment']), stopwords=stopwords):
+    while True:
+        for message in consumer:
+            print('==========')
+
+            data = json.loads(message.value.decode('utf-8'))
+            print(data)
+
+            data['keywords'] = one_sentence_keyword(data['contents'])
+            print(data['keywords'])
+
+            del data['contents']
+
+            producer.send('add-keywords', bytes(json.dumps(data), 'utf-8'))
+            producer.flush()
+
+
+def one_sentence_keyword(_sentence):
+    if not _sentence:
+        return []
+    
+    ret = []
+    sentence = clean(_sentence)
+    print(sentence)
+    
+    for tok in kiwi.tokenize(sentence, stopwords=stopwords):
         if remain_dic.get(tok.tag):
-            # tag 는 품사 form 은 글자 그 자체 
-            if tok.tag.startswith('VV') and len(tok.form) == 1:
-                continue
+            # tag는 품사 form은 형태소(글자 그 자체) 
             if len(tok.form) == 1:
                 continue
-            ret.add((tok.tag ,tok.form)) # tok.tag는 품사, tok.form 은 형태소 이다. 즉 (품사, 형태소)의 구조로 이루어진다.
-        #print(tok.tag)
-    
-    test_json['keyword'] = list(ret)
-    return test_json
+            ret.append(tok.form)
+    return ret
 
 
 if __name__ == "__main__":
